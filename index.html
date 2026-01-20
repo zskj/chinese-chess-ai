@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="纯前端中国象棋游戏，支持手机端，与AI对手对弈">
+    <meta name="keywords" content="中国象棋,象棋游戏,AI对弈,手机象棋">
+    <title>中国象棋 - AI对战</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐴 中国象棋 🐴</h1>
+            <p class="subtitle">与AI对手对弈，挑战你的战术智慧</p>
+        </header>
+
+        <div class="game-container">
+            <div class="board-container">
+                <canvas id="gameCanvas"></canvas>
+            </div>
+
+            <div class="status-bar">
+                <div id="status">游戏加载中...</div>
+            </div>
+
+            <div class="controls">
+                <button id="restartBtn">🔄 重新开始</button>
+                <button id="undoBtn">↩️ 悔棋</button>
+            </div>
+
+            <div class="info">
+                💡 点击棋子选中，再点击绿点位置即可移动<br>
+                红方先行，黑方为AI对手
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/rules.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/board.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
