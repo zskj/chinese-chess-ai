@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI性能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #764ba2;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f4f8;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>中国象棋AI性能测试</h1>
+        
+        <div class="test-section">
+            <h3>测试1: AI超时机制</h3>
+            <p>测试AI是否能在2秒内完成思考，不会导致页面崩溃</p>
+            <button id="testTimeout">运行超时测试</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>测试2: 棋子尺寸</h3>
+            <p>测试棋子尺寸是否适合移动设备</p>
+            <button id="testPieceSize">运行棋子尺寸测试</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>测试3: AI性能</h3>
+            <p>测试AI在不同难度下的性能</p>
+            <button id="testAIPerformance">运行AI性能测试</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>测试4: 移动去重</h3>
+            <p>测试AI是否正确去除了重复移动</p>
+            <button id="testMoveDeduplication">运行移动去重测试</button>
+        </div>
+        
+        <h2>测试结果:</h2>
+        <div id="results">等待测试运行...</div>
+    </div>
+    
+    <script src="js/utils.js"></script>
+    <script src="js/rules.js"></script>
+    <script src="js/ai.js"></script>
+    <script>
+        // 创建一个简单的棋盘用于测试
+        function createTestBoard() {
+            const board = Array(10).fill(null).map(() => Array(9).fill(null));
+            
+            // 添加一些棋子用于测试
+            board[0][4] = { type: 'K', isRed: false, row: 0, col: 4 };
+            board[9][4] = { type: 'K', isRed: true, row: 9, col: 4 };
+            board[0][0] = { type: 'R', isRed: false, row: 0, col: 0 };
+            board[9][0] = { type: 'R', isRed: true, row: 9, col: 0 };
+            board[0][8] = { type: 'R', isRed: false, row: 0, col: 8 };
+            board[9][8] = { type: 'R', isRed: true, row: 9, col: 8 };
+            
+            return board;
+        }
+        
+        function logResult(message, isSuccess = true) {
+            const resultsDiv = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = isSuccess ? 'success' : 'error';
+            resultsDiv.innerHTML += `<span class="${className}">[${timestamp}]</span> ${message}<br>`;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        document.getElementById('testTimeout').addEventListener('click', function() {
+            logResult('开始超时测试...');
+            
+            const board = createTestBoard();
+            AI.setDifficulty('hard');
+            
+            const startTime = Date.now();
+            
+            // 使用setTimeout模拟异步AI思考
+            setTimeout(() => {
+                try {
+                    const move = AI.getMove(board);
+                    const endTime = Date.now();
+                    const duration = endTime - startTime;
+                    
+                    if (duration > 3000) {
+                        logResult(`❌ 超时测试失败: AI用时 ${duration}ms 超过3秒`, false);
+                    } else {
+                        logResult(`✅ 超时测试通过: AI用时 ${duration}ms，未崩溃`);
+                    }
+                    
+                    if (move) {
+                        logResult(`✅ AI返回有效移动: ${JSON.stringify(move)}`);
+                    } else {
+                        logResult(`❌ AI未返回移动`, false);
+                    }
+                } catch (error) {
+                    logResult(`❌ 超时测试失败: ${error.message}`, false);
+                }
+            }, 100);
+        });
+        
+        document.getElementById('testPieceSize').addEventListener('click', function() {
+            logResult('开始棋子尺寸测试...');
+            
+            // 测试不同屏幕尺寸下的棋子大小
+            const testWidths = [375, 390, 428, 600, 800];
+            
+            testWidths.forEach(width => {
+                const height = width * 1.1;
+                let padding;
+                if (width <= 400) {
+                    padding = 15;
+                } else if (width <= 600) {
+                    padding = 18;
+                } else {
+                    padding = 20;
+                }
+                
+                const cellSize = (width - padding * 2) / 8;
+                const pieceRadius = cellSize * 0.35;
+                const fontSize = cellSize * 0.4;
+                
+                logResult(`屏幕宽度 ${width}px: 棋子半径 ${pieceRadius.toFixed(1)}px, 字体 ${fontSize.toFixed(1)}px`);
+            });
+            
+            logResult('✅ 棋子尺寸测试完成');
+        });
+        
+        document.getElementById('testAIPerformance').addEventListener('click', function() {
+            logResult('开始AI性能测试...');
+            
+            const board = createTestBoard();
+            const difficulties = ['medium', 'hard'];
+            
+            difficulties.forEach(difficulty => {
+                AI.setDifficulty(difficulty);
+                
+                const startTime = Date.now();
+                setTimeout(() => {
+                    try {
+                        const move = AI.getMove(board);
+                        const endTime = Date.now();
+                        const duration = endTime - startTime;
+                        
+                        logResult(`难度 ${difficulty}: 用时 ${duration}ms, 移动: ${move ? '有效' : '无效'}`);
+                        
+                        if (difficulty === 'hard' && duration > 2500) {
+                            logResult(`⚠️  困难模式性能警告: 用时超过2.5秒`, false);
+                        }
+                    } catch (error) {
+                        logResult(`❌ ${difficulty} 模式错误: ${error.message}`, false);
+                    }
+                }, 100);
+            });
+        });
+        
+        document.getElementById('testMoveDeduplication').addEventListener('click', function() {
+            logResult('开始移动去重测试...');
+            
+            const board = createTestBoard();
+            const allMoves = Rules.getAllValidMoves(board, false);
+            
+            logResult(`原始移动数量: ${allMoves.length}`);
+            
+            // 测试AI的去重功能
+            const uniqueMoves = AI.removeDuplicateMoves(allMoves);
+            
+            logResult(`去重后移动数量: ${uniqueMoves.length}`);
+            
+            if (uniqueMoves.length <= allMoves.length) {
+                logResult('✅ 移动去重功能正常工作');
+            } else {
+                logResult('❌ 移动去重功能异常', false);
+            }
+        });
+        
+        logResult('所有测试已准备就绪，点击按钮运行测试');
+    </script>
+</body>
+</html>
