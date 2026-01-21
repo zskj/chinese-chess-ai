@@ -11,11 +11,15 @@ const AI = {
     },
 
     getMove(board) {
+        console.log('[AI] getMove() called for black pieces');
         const allMoves = Rules.getAllValidMoves(board, false);
         
         if (allMoves.length === 0) {
+            console.log('[AI] No valid moves found for black pieces');
             return null;
         }
+
+        console.log(`[AI] Black has ${allMoves.length} possible moves`);
 
         // 根据难度选择算法
         if (this.difficulty === 'medium') {
@@ -46,6 +50,8 @@ const AI = {
         let bestScore = -Infinity;
         let depthReached = 0;
         
+        console.log('[AI] Starting hard mode AI search for BLACK pieces');
+        
         // 使用迭代加深 + Alpha-Beta剪枝 + 超时检查
         for (let depth = 1; depth <= this.searchDepth.hard; depth++) {
             const currentTime = Date.now();
@@ -58,7 +64,8 @@ const AI = {
             }
             
             // 使用Minimax + Alpha-Beta剪枝
-            const result = this.minimax(board, depth, -Infinity, Infinity, false, startTime);
+            // FIX: black pieces should be MAXIMIZING (true), not false
+            const result = this.minimax(board, depth, -Infinity, Infinity, true, startTime);
             
             if (result.move) {
                 bestMove = result.move;
@@ -73,7 +80,11 @@ const AI = {
         }
         
         const totalTime = Date.now() - startTime;
-        console.log(`AI搜索完成，用时: ${totalTime}ms，达到深度: ${depthReached}，评估分: ${bestScore}`);
+        console.log(`[AI] Search complete, time: ${totalTime}ms, depth: ${depthReached}, score: ${bestScore}`);
+        
+        if (bestMove) {
+            console.log(`[AI] Selected move: ${bestMove.piece.type} from [${bestMove.from.row},${bestMove.from.col}] to [${bestMove.to.row},${bestMove.to.col}]`);
+        }
         
         // 如果AI思考时间过长且没有找到好的走法，回退到中等难度策略
         if (totalTime > 1800 && (!bestMove || Math.abs(bestScore) < 100)) {
