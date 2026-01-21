@@ -65,10 +65,12 @@ const Game = {
 
     handleCellClick(row, col) {
         if (this.gameOver) {
+            console.log('[GAME] Game is over, ignoring click');
             return;
         }
 
         if (this.currentPlayer !== 'red') {
+            console.log(`[GAME] Not player's turn. Current player: ${this.currentPlayer}`);
             return;
         }
 
@@ -80,12 +82,17 @@ const Game = {
             );
 
             if (isValidMove) {
+                console.log('[GAME] Player move validated, executing move');
                 this.makeMove(this.selectedPiece, row, col);
                 Board.clearSelection();
                 this.selectedPiece = null;
                 
                 if (!this.gameOver) {
-                    setTimeout(() => this.aiMove(), 500);
+                    console.log('[GAME] Player move completed, calling AI after 500ms');
+                    setTimeout(() => {
+                        console.log('[GAME] AI move timeout triggered');
+                        this.aiMove();
+                    }, 500);
                 }
             } else if (clickedPiece && clickedPiece.isRed) {
                 this.selectPiece(row, col);
@@ -117,6 +124,9 @@ const Game = {
         const piece = this.board[fromRow][fromCol];
         const capturedPiece = this.board[toRow][toCol];
 
+        // Add debug information
+        console.log(`[GAME] Making move: ${piece.type} from [${fromRow},${fromCol}] to [${toRow},${toCol}], Color: ${piece.isRed ? 'red' : 'black'}`);
+
         this.moveHistory.push({
             from: { row: fromRow, col: fromCol },
             to: { row: toRow, col: toCol },
@@ -133,12 +143,15 @@ const Game = {
         Board.draw(this.board);
 
         this.currentPlayer = this.currentPlayer === 'red' ? 'black' : 'red';
+        console.log(`[GAME] Turn switched. Current player: ${this.currentPlayer}`);
 
         this.checkGameOver();
     },
 
     aiMove() {
+        console.log(`[GAME] aiMove() called. Game over: ${this.gameOver}, Current player: ${this.currentPlayer}`);
         if (this.gameOver || this.currentPlayer !== 'black') {
+            console.log('[GAME] AI move skipped - either game over or not AI turn');
             return;
         }
 
