@@ -13,6 +13,15 @@ const Game = {
         document.getElementById('restartBtn').addEventListener('click', () => this.restart());
         document.getElementById('undoBtn').addEventListener('click', () => this.undo());
         
+        // 难度选择器事件监听
+        document.getElementById('difficulty').addEventListener('change', (e) => {
+            AI.setDifficulty(e.target.value);
+            this.updateStatus(`难度已设置为：${e.target.value === 'medium' ? '中等' : '困难'} | 红方走棋`);
+        });
+        
+        // 设置默认难度为困难
+        AI.setDifficulty('hard');
+        
         this.moveHistory = [];
     },
 

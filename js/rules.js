@@ -332,10 +332,12 @@ const Rules = {
                     const tempPiece = { ...piece, row: r, col: c };
                     const validMoves = this.getValidMoves(board, tempPiece);
                     validMoves.forEach(move => {
+                        const captured = board[move.row][move.col];
                         allMoves.push({
                             from: { row: r, col: c },
                             to: { row: move.row, col: move.col },
-                            piece: tempPiece
+                            piece: tempPiece,
+                            captured: captured ? { ...captured } : null
                         });
                     });
                 }

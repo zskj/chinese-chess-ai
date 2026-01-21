@@ -16,6 +16,14 @@
         </header>
 
         <div class="game-container">
+            <div class="difficulty-selector">
+                <label for="difficulty">AI难度：</label>
+                <select id="difficulty">
+                    <option value="medium">中等</option>
+                    <option value="hard" selected>困难</option>
+                </select>
+            </div>
+            
             <div class="board-container">
                 <canvas id="gameCanvas"></canvas>
             </div>
