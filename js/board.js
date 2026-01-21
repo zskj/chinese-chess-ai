@@ -35,8 +35,16 @@ const Board = {
         this.canvas.width = width;
         this.canvas.height = height;
         
-        this.cellSize = (width - 40) / 8;
-        this.padding = 20;
+        // Adjust padding based on screen size for better mobile experience
+        if (window.innerWidth <= 400) {
+            this.padding = 15;
+        } else if (window.innerWidth <= 600) {
+            this.padding = 18;
+        } else {
+            this.padding = 20;
+        }
+        
+        this.cellSize = (width - this.padding * 2) / 8;
         
         if (Game.board) {
             this.draw(Game.board);
@@ -113,7 +121,7 @@ const Board = {
     drawPieces(board) {
         const ctx = this.ctx;
         const { cellSize, padding } = this;
-        const radius = cellSize * 0.4;
+        const radius = cellSize * 0.35; // Reduced from 0.4 to 0.35 for smaller pieces
         
         for (let row = 0; row < 10; row++) {
             for (let col = 0; col < 9; col++) {
@@ -133,11 +141,11 @@ const Board = {
                     
                     ctx.fillStyle = '#fff';
                     ctx.beginPath();
-                    ctx.arc(x, y, radius - 3, 0, Math.PI * 2);
+                    ctx.arc(x, y, radius - 2, 0, Math.PI * 2);
                     ctx.fill();
                     
                     ctx.fillStyle = piece.isRed ? '#ff4444' : '#333';
-                    ctx.font = `bold ${cellSize * 0.5}px SimHei, "Microsoft YaHei", sans-serif`;
+                    ctx.font = `bold ${cellSize * 0.4}px SimHei, "Microsoft YaHei", sans-serif`; // Reduced from 0.5 to 0.4
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     
@@ -191,11 +199,11 @@ const Board = {
             
             ctx.fillStyle = 'rgba(0, 255, 0, 0.4)';
             ctx.beginPath();
-            ctx.arc(x, y, cellSize * 0.15, 0, Math.PI * 2);
+            ctx.arc(x, y, cellSize * 0.12, 0, Math.PI * 2); // Reduced from 0.15 to 0.12
             ctx.fill();
             
             ctx.strokeStyle = 'rgba(0, 200, 0, 0.8)';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 1.5; // Reduced from 2 to 1.5
             ctx.stroke();
         });
     },

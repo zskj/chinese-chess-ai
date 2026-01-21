@@ -142,10 +142,14 @@ const Game = {
             return;
         }
 
-        this.updateStatus('AI思考中...');
+        const difficulty = AI.difficulty;
+        const difficultyText = difficulty === 'hard' ? '困难' : '中等';
+        this.updateStatus(`AI思考中... (${difficultyText}模式)`);
 
         setTimeout(() => {
+            const startTime = Date.now();
             const move = AI.getMove(this.board);
+            const aiTime = Date.now() - startTime;
 
             if (!move) {
                 this.endGame('red');
@@ -153,9 +157,13 @@ const Game = {
             }
 
             this.makeMove(move.from, move.to.row, move.to.col);
-            
+
             if (!this.gameOver) {
-                this.updateStatus('红方走棋');
+                if (aiTime > 1800) { // If AI took more than 1.8 seconds
+                    this.updateStatus(`红方走棋 (AI思考用时: ${aiTime}ms)`);
+                } else {
+                    this.updateStatus('红方走棋');
+                }
             }
         }, 300);
     },

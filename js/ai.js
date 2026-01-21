@@ -2,8 +2,9 @@ const AI = {
     difficulty: 'medium', // 'medium' or 'hard'
     searchDepth: {
         'medium': 2,
-        'hard': 4
+        'hard': 3  // Reduced from 4 to 3 for better performance
     },
+    maxSearchTime: 2000, // Maximum search time in milliseconds (2 seconds)
 
     setDifficulty(difficulty) {
         this.difficulty = difficulty;
@@ -41,18 +42,59 @@ const AI = {
 
     getMoveHard(board) {
         const startTime = Date.now();
-        const depth = this.searchDepth.hard;
+        let bestMove = null;
+        let bestScore = -Infinity;
+        let depthReached = 0;
         
-        // 使用Minimax + Alpha-Beta剪枝
-        const result = this.minimax(board, depth, -Infinity, Infinity, false);
+        // 使用迭代加深 + Alpha-Beta剪枝 + 超时检查
+        for (let depth = 1; depth <= this.searchDepth.hard; depth++) {
+            const currentTime = Date.now();
+            const timeUsed = currentTime - startTime;
+            
+            // 检查是否超时
+            if (timeUsed >= this.maxSearchTime) {
+                console.log(`AI搜索超时，已用时: ${timeUsed}ms，达到深度: ${depthReached}`);
+                break;
+            }
+            
+            // 使用Minimax + Alpha-Beta剪枝
+            const result = this.minimax(board, depth, -Infinity, Infinity, false, startTime);
+            
+            if (result.move) {
+                bestMove = result.move;
+                bestScore = result.score;
+                depthReached = depth;
+            }
+            
+            // 检查是否已经找到极好走法（如将军或吃子）
+            if (Math.abs(bestScore) > 500) { // 如果找到高价值走法，可以提前结束
+                break;
+            }
+        }
         
-        console.log(`AI搜索用时: ${Date.now() - startTime}ms, 评估分: ${result.score}`);
+        const totalTime = Date.now() - startTime;
+        console.log(`AI搜索完成，用时: ${totalTime}ms，达到深度: ${depthReached}，评估分: ${bestScore}`);
         
-        return result.move;
+        // 如果AI思考时间过长且没有找到好的走法，回退到中等难度策略
+        if (totalTime > 1800 && (!bestMove || Math.abs(bestScore) < 100)) {
+            console.log('AI性能回退到中等难度策略');
+            const allMoves = Rules.getAllValidMoves(board, false);
+            return this.getMoveMedium(board, allMoves);
+        }
+        
+        return bestMove;
     },
 
     // Minimax算法 with Alpha-Beta剪枝
-    minimax(board, depth, alpha, beta, isMaximizing) {
+    minimax(board, depth, alpha, beta, isMaximizing, startTime) {
+        // 检查超时
+        if (startTime && Date.now() - startTime >= this.maxSearchTime) {
+            return {
+                score: 0,
+                move: null
+            };
+        }
+        
         // 检查终止条件
         if (depth === 0 || this.isGameOver(board)) {
             return {
@@ -82,7 +124,7 @@ const AI = {
             
             for (const move of sortedMoves) {
                 const newBoard = this.makeMoveOnBoard(board, move);
-                const result = this.minimax(newBoard, depth - 1, alpha, beta, false);
+                const result = this.minimax(newBoard, depth - 1, alpha, beta, false, startTime);
                 
                 if (result.score > maxScore) {
                     maxScore = result.score;
@@ -101,7 +143,7 @@ const AI = {
             
             for (const move of sortedMoves) {
                 const newBoard = this.makeMoveOnBoard(board, move);
-                const result = this.minimax(newBoard, depth - 1, alpha, beta, true);
+                const result = this.minimax(newBoard, depth - 1, alpha, beta, true, startTime);
                 
                 if (result.score < minScore) {
                     minScore = result.score;
@@ -120,10 +162,30 @@ const AI = {
 
     // 移动排序优化搜索效率
     sortMoves(board, moves) {
-        return moves.map(move => ({
+        // 去重处理 - 移除重复的移动
+        const uniqueMoves = this.removeDuplicateMoves(moves);
+        
+        return uniqueMoves.map(move => ({
             move,
             priority: this.getMovePriority(board, move)
         })).sort((a, b) => b.priority - a.priority).map(item => item.move);
+    },
+    
+    // 移除重复的移动（相同的from和to位置）
+    removeDuplicateMoves(moves) {
+        const seen = new Set();
+        const uniqueMoves = [];
+        
+        for (const move of moves) {
+            const moveKey = `${move.from.row},${move.from.col}-${move.to.row},${move.to.col}`;
+            
+            if (!seen.has(moveKey)) {
+                seen.add(moveKey);
+                uniqueMoves.push(move);
+            }
+        }
+        
+        return uniqueMoves;
     },
 
     // 计算移动优先级
@@ -134,6 +196,12 @@ const AI = {
         // 1. 吃子移动优先级最高
         if (captured) {
             priority += Utils.getPieceValue(captured.type) * 100;
+
+            // 吃掉高价值棋子（如车、炮、马）优先级更高
+            if (captured.type === 'R') priority += 500;
+            if (captured.type === 'C') priority += 300;
+            if (captured.type === 'N') priority += 200;
+            if (captured.type === 'K') priority += 10000; // 吃将优先级最高
         }
 
         // 2. 将军移动
@@ -155,7 +223,12 @@ const AI = {
         // 5. 位置价值
         priority += Utils.getPositionValue(piece.type, to.row, to.col, false);
 
-        // 6. 添加少量随机性避免完全确定性
+        // 6. 中心控制
+        const centerCol = 4;
+        const distanceToCenter = Math.abs(to.col - centerCol);
+        priority += (4 - distanceToCenter) * 0.3;
+
+        // 7. 添加少量随机性避免完全确定性
         priority += Math.random() * 2;
 
         return priority;
